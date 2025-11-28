@@ -1,0 +1,5 @@
+{
+  "name": "FinSight AI",
+  "description": "A world-class document analysis and comparison tool powered by Gemini. Compare PDFs, CSVs, and URLs, generating insights, risk assessments, and visualizations.",
+  "requestFramePermissions": []
+}
