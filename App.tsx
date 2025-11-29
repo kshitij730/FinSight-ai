@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Upload, Link as LinkIcon, File as FileIcon, Trash2, Play, Sparkles, X, Plus, ArrowRight, Loader2, AlertCircle, History, LayoutDashboard, Settings, LogOut, ChevronRight, Save, BarChart3, Scale, Layers, Blocks, BrainCircuit, Lock, ShieldCheck, Database, User } from 'lucide-react';
 import { UploadedFile, LinkResource, AnalysisStatus, ComparisonResult, ViewState, SavedReport, DocumentType, AnalysisMode, Plugin, Integration, PrivacySettings } from './types';
@@ -45,10 +46,12 @@ const App: React.FC = () => {
 
   // Auth Listener
   useEffect(() => {
+    // Only attempt to check session if supabase is properly initialized
+    // (supabase is always initialized with fallback, but we should be careful)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setViewState(session ? ViewState.DASHBOARD : ViewState.AUTH);
-    });
+    }).catch(e => console.log('Auth session check failed (expected if no keys):', e));
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
