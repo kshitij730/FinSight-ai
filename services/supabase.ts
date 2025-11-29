@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // NOTE: In a real deployment, these would come from process.env
 // You must set these in your environment variables for Auth to work.
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Supabase credentials missing! Auth will fail. Please check README.");
