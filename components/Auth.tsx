@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Lock, Mail, ArrowRight, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 
 interface AuthProps {
-  onLogin: () => void; // Callback when session is established
+  onLogin: () => void;
 }
 
 const Auth: React.FC<AuthProps> = ({ onLogin }) => {
@@ -17,37 +18,30 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setLoading(true);
     setError(null);
 
-    // Simulate API delay
+    // Simulate Network Delay
     setTimeout(() => {
       setLoading(false);
-      // Simulate simple validation
+      // Simple validation simulation
       if (email && !email.includes('@')) {
         setError("Please enter a valid email address.");
         return;
       }
-      onLogin(); // Proceed to dashboard
-    }, 1500);
+      onLogin(); // Trigger successful login
+    }, 1000);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-900">
       {/* Animated Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 animate-gradient-xy"></div>
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
-         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse delay-700"></div>
-      </div>
-
+      
       <div className="max-w-md w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-10 animate-in zoom-in-95 duration-500">
-        <div className="bg-gradient-to-r from-blue-600/90 to-indigo-600/90 p-8 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
-          <div className="relative z-10">
-            <div className="mx-auto bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-md shadow-lg rotate-3 hover:rotate-6 transition-transform">
+        <div className="bg-gradient-to-r from-blue-600/90 to-indigo-600/90 p-8 text-center">
+            <div className="mx-auto bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-md shadow-lg rotate-3">
                 <Sparkles className="text-white w-8 h-8" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-1 tracking-tight">FinSight AI</h1>
+            <h1 className="text-3xl font-bold text-white mb-1">FinSight AI</h1>
             <p className="text-blue-100 font-medium text-sm">Enterprise Financial Intelligence</p>
-          </div>
         </div>
 
         <div className="p-8">
@@ -62,7 +56,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             </div>
           )}
 
-          {/* Google Login Button (Mock) */}
+          {/* Google Login Simulation */}
           <button
             onClick={() => handleMockLogin()}
             disabled={loading}
