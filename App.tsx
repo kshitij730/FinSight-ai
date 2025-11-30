@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Upload, Link as LinkIcon, File as FileIcon, Trash2, Play, Sparkles, X, Plus, ArrowRight, Loader2, AlertCircle, History, LayoutDashboard, Settings, LogOut, ChevronRight, Save, BarChart3, Scale, Layers, Blocks, BrainCircuit, Lock, ShieldCheck, Database, User } from 'lucide-react';
 import { UploadedFile, LinkResource, AnalysisStatus, ComparisonResult, ViewState, SavedReport, DocumentType, AnalysisMode, Plugin, Integration, PrivacySettings } from './types';
@@ -7,48 +6,11 @@ import Analysis from './components/Analysis';
 import ChatBot from './components/ChatBot';
 import Marketplace from './components/Marketplace';
 import Vault from './components/Vault';
-import { analyzeDocuments } from './services/gemini';
+import { analyzeDocuments, initializationError } from './services/gemini';
 import { saveReport, getReports, getReportById } from './services/storage';
 import { indexDocumentToVault, retrieveContext } from './services/memory';
 
-// Error Boundary Component
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-red-50 p-8">
-          <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full border border-red-100">
-            <h2 className="text-2xl font-bold text-red-600 mb-4 flex items-center gap-2">
-              <AlertCircle className="w-8 h-8" /> Application Error
-            </h2>
-            <p className="text-slate-600 mb-4">Something went wrong while rendering the application UI.</p>
-            <pre className="bg-slate-100 p-4 rounded-lg text-xs overflow-auto mb-6 text-slate-700">
-              {this.state.error?.message}
-            </pre>
-            <button 
-              onClick={() => window.location.reload()}
-              className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition"
-            >
-              Reload Application
-            </button>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-const AppContent: React.FC = () => {
+const App: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>(ViewState.AUTH);
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [links, setLinks] = useState<LinkResource[]>([]);
@@ -59,7 +21,7 @@ const AppContent: React.FC = () => {
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('PERIOD_VS_PERIOD');
   const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({ secureMode: true });
   
-  // Local Mock User State
+  // Auth State (Mock)
   const [user, setUser] = useState<any>(null);
 
   // History State
@@ -80,6 +42,43 @@ const AppContent: React.FC = () => {
     { id: 'salesforce', name: 'Salesforce', description: 'CRM pipeline and deal forecasting.', icon: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg', status: 'DISCONNECTED', mockContext: '' },
   ]);
 
+  // CRITICAL STARTUP CHECK: 
+  // If the API Key is missing, do not render the App. Render a blocking error screen instead.
+  if (initializationError) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+        <div className="max-w-xl w-full bg-slate-800 border border-red-500/50 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+           <div className="absolute top-0 left-0 w-full h-2 bg-red-500"></div>
+           <div className="flex items-start gap-4 mb-6">
+              <div className="bg-red-500/20 p-3 rounded-full">
+                 <AlertCircle className="w-8 h-8 text-red-500" />
+              </div>
+              <div>
+                 <h1 className="text-2xl font-bold text-white mb-2">Configuration Error</h1>
+                 <p className="text-slate-300">The application cannot start because the API Key is missing.</p>
+              </div>
+           </div>
+           
+           <div className="bg-slate-950 rounded-xl p-4 font-mono text-sm text-red-400 border border-slate-700 mb-6 overflow-x-auto">
+              {initializationError}
+           </div>
+
+           <div className="space-y-4">
+              <h3 className="text-white font-semibold">How to fix this:</h3>
+              <ol className="list-decimal list-inside text-slate-400 space-y-2 text-sm">
+                 <li>Create a <code className="bg-slate-700 px-1 py-0.5 rounded text-white">.env</code> file in your project root.</li>
+                 <li>Add the following line to the file:</li>
+                 <li className="bg-slate-900 p-2 rounded border border-slate-700 text-blue-300 font-mono mt-1 block">
+                    GEMINI_API_KEY=your_actual_api_key
+                 </li>
+                 <li>Restart the application.</li>
+              </ol>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
   // Load history on mount
   useEffect(() => {
     if (viewState === ViewState.DASHBOARD) {
@@ -88,7 +87,7 @@ const AppContent: React.FC = () => {
   }, [viewState]);
 
   const handleLogin = () => {
-    // Simulate Login
+    // Mock successful login
     setUser({ email: 'demo@finsight.ai' });
     setViewState(ViewState.DASHBOARD);
   };
@@ -612,14 +611,5 @@ const AppContent: React.FC = () => {
     </div>
   );
 };
-
-// Wrap main app with Error Boundary
-const App: React.FC = () => {
-    return (
-        <ErrorBoundary>
-            <AppContent />
-        </ErrorBoundary>
-    );
-}
 
 export default App;
