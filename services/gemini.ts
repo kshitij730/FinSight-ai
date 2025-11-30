@@ -1,32 +1,32 @@
+
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { ComparisonResult, UploadedFile, LinkResource, DocumentType, AnalysisMode, ScenarioModifiers, ScenarioResult, Plugin, Integration, FinancialFact } from "../types";
 
-// Helper to safely get API Key without crashing in browser environments
-const getApiKey = (): string => {
+// Helper to safely get environment variables without crashing in browser
+const getEnv = (key: string): string | undefined => {
   try {
-    // Try standard REACT_APP_ prefix first (common in React apps)
+    // Check process.env if available
     if (typeof process !== 'undefined' && process.env) {
-      if (process.env.REACT_APP_GEMINI_API_KEY) return process.env.REACT_APP_GEMINI_API_KEY;
-      if (process.env.API_KEY) return process.env.API_KEY;
+      return process.env[key];
     }
   } catch (e) {
     // Ignore ReferenceError if process is not defined
   }
-  return '';
+  return undefined;
 };
 
-const apiKey = getApiKey();
+// Prioritize GEMINI_API_KEY as requested
+const apiKey = getEnv('GEMINI_API_KEY') || getEnv('REACT_APP_GEMINI_API_KEY') || getEnv('API_KEY');
 
-// Initialize Gemini Client safely
-// We use a fallback key to prevent the app from crashing on load if the key is missing.
-// The actual API call will fail gracefully with a specific error message.
+// Initialize Gemini Client
+// We use a fallback if missing to prevent "white screen" crash on load,
+// but the actual analysis calls will fail gracefully with a user-friendly error.
 let ai: GoogleGenAI;
 try {
-    ai = new GoogleGenAI({ apiKey: apiKey || 'missing_api_key_placeholder' });
+    ai = new GoogleGenAI({ apiKey: apiKey || 'fallback_key' });
 } catch (error) {
-    console.error("Gemini Client Init Warning:", error);
-    // Fallback to ensure module exports don't fail, utilizing a dummy key
-    ai = new GoogleGenAI({ apiKey: 'fallback_init_key' });
+    console.warn("Gemini Client Init Warning:", error);
+    ai = new GoogleGenAI({ apiKey: 'fallback_key' });
 }
 
 // Helper to convert file to base64
@@ -234,8 +234,8 @@ export const analyzeDocuments = async (
   vaultContext: string = ''
 ): Promise<ComparisonResult> => {
   
-  if (!apiKey || apiKey === 'missing_api_key_placeholder') {
-    throw new Error("API Key is missing. Please configure REACT_APP_GEMINI_API_KEY in your environment variables.");
+  if (!apiKey || apiKey === 'fallback_key') {
+    throw new Error("API Key is missing. Please configure GEMINI_API_KEY in your environment variables.");
   }
 
   const fileParts = await Promise.all(files.map(f => fileToGenerativePart(f.fileObject)));
@@ -336,7 +336,7 @@ export const analyzeDocuments = async (
 };
 
 export const extractDocumentFacts = async (file: UploadedFile): Promise<{summary: string, facts: FinancialFact[]}> => {
-  if (!apiKey || apiKey === 'missing_api_key_placeholder') throw new Error("API Key Missing");
+  if (!apiKey || apiKey === 'fallback_key') throw new Error("API Key Missing. Set GEMINI_API_KEY.");
   const filePart = await fileToGenerativePart(file.fileObject);
   
   const prompt = `
@@ -373,7 +373,7 @@ export const analyzeScenario = async (
   currentResult: ComparisonResult,
   modifiers: ScenarioModifiers
 ): Promise<ScenarioResult> => {
-  if (!apiKey || apiKey === 'missing_api_key_placeholder') throw new Error("API Key Missing");
+  if (!apiKey || apiKey === 'fallback_key') throw new Error("API Key Missing. Set GEMINI_API_KEY.");
   const promptText = `
     Perform a 'What-If' Scenario Analysis based on the previous financial context.
     
@@ -421,7 +421,7 @@ export const chatWithContext = async (
   newMessage: string,
   files: UploadedFile[]
 ) => {
-  if (!apiKey || apiKey === 'missing_api_key_placeholder') throw new Error("API Key Missing");
+  if (!apiKey || apiKey === 'fallback_key') throw new Error("API Key Missing. Set GEMINI_API_KEY.");
   
   const fileParts = await Promise.all(files.map(f => fileToGenerativePart(f.fileObject)));
 
