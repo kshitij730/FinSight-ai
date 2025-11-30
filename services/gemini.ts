@@ -1,32 +1,44 @@
-
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { ComparisonResult, UploadedFile, LinkResource, DocumentType, AnalysisMode, ScenarioModifiers, ScenarioResult, Plugin, Integration, FinancialFact } from "../types";
 
-// Helper to safely get environment variables without crashing in browser
-const getEnv = (key: string): string | undefined => {
+// --- ROBUST API KEY RETRIEVAL ---
+// This function ensures the app doesn't crash if 'process' is undefined (common in browser/vite/esbuild envs)
+const getApiKey = (): string => {
   try {
-    // Check process.env if available
+    // 1. Check standard node-style process.env
     if (typeof process !== 'undefined' && process.env) {
-      return process.env[key];
+      if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+      if (process.env.REACT_APP_GEMINI_API_KEY) return process.env.REACT_APP_GEMINI_API_KEY;
+    }
+    // 2. Check for Vite-style import.meta.env (fallback)
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+        // @ts-ignore
+        if (import.meta.env.VITE_GEMINI_API_KEY) return import.meta.env.VITE_GEMINI_API_KEY;
+        // @ts-ignore
+        if (import.meta.env.GEMINI_API_KEY) return import.meta.env.GEMINI_API_KEY;
     }
   } catch (e) {
-    // Ignore ReferenceError if process is not defined
+    // Silently fail if environment access is restricted
+    console.warn("Could not access environment variables safely.");
   }
-  return undefined;
+  return '';
 };
 
-// Prioritize GEMINI_API_KEY as requested
-const apiKey = getEnv('GEMINI_API_KEY') || getEnv('REACT_APP_GEMINI_API_KEY') || getEnv('API_KEY');
+const apiKey = getApiKey();
+const IS_KEY_VALID = !!apiKey && apiKey !== 'missing_api_key_placeholder';
 
-// Initialize Gemini Client
-// We use a fallback if missing to prevent "white screen" crash on load,
-// but the actual analysis calls will fail gracefully with a user-friendly error.
+// Initialize Gemini Client safely.
+// We NEVER throw here, because throwing at the top level causes a "White Screen of Death" 
+// before the React app can even mount.
 let ai: GoogleGenAI;
 try {
-    ai = new GoogleGenAI({ apiKey: apiKey || 'fallback_key' });
+    // If key is missing, we use a dummy so the object exists. We will check IS_KEY_VALID later.
+    ai = new GoogleGenAI({ apiKey: apiKey || 'dummy_key_for_init' });
 } catch (error) {
-    console.warn("Gemini Client Init Warning:", error);
-    ai = new GoogleGenAI({ apiKey: 'fallback_key' });
+    console.error("Gemini Client Init Warning:", error);
+    // Absolute fallback to ensure the module exports valid objects
+    ai = new GoogleGenAI({ apiKey: 'fallback_init_key' });
 }
 
 // Helper to convert file to base64
@@ -234,8 +246,10 @@ export const analyzeDocuments = async (
   vaultContext: string = ''
 ): Promise<ComparisonResult> => {
   
-  if (!apiKey || apiKey === 'fallback_key') {
-    throw new Error("API Key is missing. Please configure GEMINI_API_KEY in your environment variables.");
+  // LAZY VALIDATION: We only throw the error when the user actually tries to do something.
+  // This prevents the "White Screen" on startup.
+  if (!IS_KEY_VALID) {
+    throw new Error("Configuration Error: GEMINI_API_KEY is missing. Please set this environment variable in your project settings.");
   }
 
   const fileParts = await Promise.all(files.map(f => fileToGenerativePart(f.fileObject)));
@@ -336,7 +350,7 @@ export const analyzeDocuments = async (
 };
 
 export const extractDocumentFacts = async (file: UploadedFile): Promise<{summary: string, facts: FinancialFact[]}> => {
-  if (!apiKey || apiKey === 'fallback_key') throw new Error("API Key Missing. Set GEMINI_API_KEY.");
+  if (!IS_KEY_VALID) throw new Error("Configuration Error: GEMINI_API_KEY Missing");
   const filePart = await fileToGenerativePart(file.fileObject);
   
   const prompt = `
@@ -373,7 +387,7 @@ export const analyzeScenario = async (
   currentResult: ComparisonResult,
   modifiers: ScenarioModifiers
 ): Promise<ScenarioResult> => {
-  if (!apiKey || apiKey === 'fallback_key') throw new Error("API Key Missing. Set GEMINI_API_KEY.");
+  if (!IS_KEY_VALID) throw new Error("Configuration Error: GEMINI_API_KEY Missing");
   const promptText = `
     Perform a 'What-If' Scenario Analysis based on the previous financial context.
     
@@ -421,7 +435,7 @@ export const chatWithContext = async (
   newMessage: string,
   files: UploadedFile[]
 ) => {
-  if (!apiKey || apiKey === 'fallback_key') throw new Error("API Key Missing. Set GEMINI_API_KEY.");
+  if (!IS_KEY_VALID) throw new Error("Configuration Error: GEMINI_API_KEY Missing");
   
   const fileParts = await Promise.all(files.map(f => fileToGenerativePart(f.fileObject)));
 
