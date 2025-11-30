@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -48,12 +49,17 @@
         overflow: auto;
       }
     </style>
+    <!-- GLOBAL ERROR CATCHER FOR STARTUP CRASHES -->
     <script>
       window.onerror = function(message, source, lineno, colno, error) {
-        var crashScreen = document.getElementById('crash-screen');
-        if (crashScreen) {
-          crashScreen.style.display = 'block';
-          crashScreen.innerHTML = '<h1>Application Crashed</h1><p><strong>Error:</strong> ' + message + '</p><p><strong>Source:</strong> ' + source + ':' + lineno + '</p><pre>' + (error ? error.stack : '') + '</pre>';
+        // Only show if the root element is empty (meaning React failed to start)
+        var root = document.getElementById('root');
+        if (root && root.innerHTML.trim() === '') {
+            var crashScreen = document.getElementById('crash-screen');
+            if (crashScreen) {
+                crashScreen.style.display = 'block';
+                crashScreen.innerHTML = '<h1>Application Crashed on Startup</h1><p><strong>Error:</strong> ' + message + '</p><p><strong>File:</strong> ' + source + ':' + lineno + '</p><pre style="background:#fecaca; padding:10px; border-radius:8px;">' + (error ? error.stack : 'No stack trace') + '</pre><p style="margin-top:20px; font-weight:bold">Try refreshing the page or checking your environment variables.</p>';
+            }
         }
       };
     </script>
