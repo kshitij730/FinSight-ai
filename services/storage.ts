@@ -1,4 +1,3 @@
-
 import { SavedReport, ComparisonResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -51,6 +50,11 @@ export const deleteReport = (id: string): void => {
 };
 
 export const getReportById = (id: string): SavedReport | undefined => {
-  const reports = getReports();
-  return reports.find(r => r.id === id);
+  try {
+    const reports = getReports();
+    return reports.find(r => r.id === id);
+  } catch (e) {
+    console.warn("Error getting report:", e);
+    return undefined;
+  }
 };
